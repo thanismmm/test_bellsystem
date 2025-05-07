@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "627690937522",
+    "firebase_url": "https://fireset-f5daa-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "fireset-f5daa",
+    "storage_bucket": "fireset-f5daa.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:627690937522:android:836f77b5d7890111ccfdab",
+        "android_client_info": {
+          "package_name": "com.softxpertz.bell_system_test"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAGC9BFFnbnc3lYIBu0M-jh-0yLdcTtqdg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
