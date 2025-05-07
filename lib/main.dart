@@ -28,7 +28,7 @@ class MyApp extends StatelessWidget {
     return ChangeNotifierProvider(
       create: (context) => ScheduleProvider(),
       child: MaterialApp(
-        title: 'School Bell Schedule',
+        title: 'School Bell Schedules',
         theme: ThemeData(
           primarySwatch: Colors.blue,
           visualDensity: VisualDensity.adaptivePlatformDensity,
