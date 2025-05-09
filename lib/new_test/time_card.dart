@@ -3,15 +3,19 @@ import 'time_display.dart';
 
 class TimeCard extends StatelessWidget {
   final String title;
-  final TimeOfDay time;
+  final TimeOfDay? time;
   final VoidCallback onTimeTap;
+  final bool enabled;
+  final ValueChanged<bool> onToggle;
 
   const TimeCard({
-    super.key,
+    Key? key,
     required this.title,
     required this.time,
     required this.onTimeTap,
-  });
+    required this.enabled,
+    required this.onToggle,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +28,7 @@ class TimeCard extends StatelessWidget {
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: onTimeTap,
+        onTap: enabled ? onTimeTap : null,
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
@@ -38,10 +42,30 @@ class TimeCard extends StatelessWidget {
                   ),
                 ),
               ),
-              TimeDisplay(time: time),
+              // Toggle switch moved here (left of time display)
+              Switch(
+                value: enabled,
+                onChanged: onToggle,
+                activeColor: Colors.blue[700],
+              ),
+              const SizedBox(width: 8),
+              // Show time or "disable" text
+              enabled && time != null
+                  ? TimeDisplay(time: time!)
+                  : const Text(
+                      'disabled',
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
               IconButton(
-                icon: Icon(Icons.access_time, color: Colors.blue[700]),
-                onPressed: onTimeTap,
+                icon: Icon(
+                  Icons.access_time,
+                  color: enabled ? Colors.blue[700] : Colors.grey,
+                ),
+                onPressed: enabled ? onTimeTap : null,
               ),
             ],
           ),

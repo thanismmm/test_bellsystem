@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 
 class ScheduleProvider with ChangeNotifier {
-  // Time lists
-  final List<TimeOfDay> _regularTimes = List.generate(15, (_) => TimeOfDay.now());
-  final List<TimeOfDay> _fridayTimes = List.generate(11, (_) => TimeOfDay.now());
-  final List<TimeOfDay> _examTimes = List.generate(8, (_) => TimeOfDay.now());
-  
+  // Time lists: can be TimeOfDay or String "disabled"
+  final List _regularTimes = List.generate(15, (_) => TimeOfDay.now());
+  final List _fridayTimes = List.generate(11, (_) => TimeOfDay.now());
+  final List _examTimes = List.generate(8, (_) => TimeOfDay.now());
+
   // Exam dates
-  final List<DateTime> _examDates = List.generate(5, (_) => DateTime.now());
+  final List _examDates = List.generate(5, (_) => DateTime.now());
 
   // Bell settings
   int _bellType = 1;
@@ -25,10 +25,10 @@ class ScheduleProvider with ChangeNotifier {
   String _audioListF = 'aa.mp3';
 
   // Getters
-  List<TimeOfDay> get regularTimes => _regularTimes;
-  List<TimeOfDay> get fridayTimes => _fridayTimes;
-  List<TimeOfDay> get examTimes => _examTimes;
-  List<DateTime> get examDates => _examDates;
+  List get regularTimes => _regularTimes;
+  List get fridayTimes => _fridayTimes;
+  List get examTimes => _examTimes;
+  List get examDates => _examDates;
   int get bellType => _bellType;
   int get shortBellDuration => _shortBellDuration;
   int get longBellDuration => _longBellDuration;
@@ -40,17 +40,43 @@ class ScheduleProvider with ChangeNotifier {
   String get audioListF => _audioListF;
   bool get isUpdating => _isUpdating;
 
-  TimeOfDay getCurrentTime(String scheduleType, int index) {
+  /// Returns null if disabled, otherwise TimeOfDay
+  TimeOfDay? getCurrentTime(String scheduleType, int index) {
+    dynamic value;
     switch (scheduleType) {
       case 'Regular':
-        return _regularTimes[index];
+        value = _regularTimes[index];
+        break;
       case 'Friday':
-        return _fridayTimes[index];
+        value = _fridayTimes[index];
+        break;
       case 'Exam/Special day':
-        return _examTimes[index];
+        value = _examTimes[index];
+        break;
       default:
-        return TimeOfDay.now();
+        return null;
     }
+    if (value == "disabled") return null;
+    return value as TimeOfDay;
+  }
+
+  /// Used by UI to check if enabled
+  bool isEnabled(String scheduleType, int index) {
+    dynamic value;
+    switch (scheduleType) {
+      case 'Regular':
+        value = _regularTimes[index];
+        break;
+      case 'Friday':
+        value = _fridayTimes[index];
+        break;
+      case 'Exam/Special day':
+        value = _examTimes[index];
+        break;
+      default:
+        return true;
+    }
+    return value != "disabled";
   }
 
   int getTimeCount(String scheduleType) {
@@ -66,7 +92,68 @@ class ScheduleProvider with ChangeNotifier {
     }
   }
 
-  Future<void> fetchScheduleFromFirebase() async {
+  /// Toggle enabled/disabled for a time slot and update Firebase
+  Future<void> toggleTimeEnabled(String scheduleType, int index, bool enabled) async {
+    if (!enabled) {
+      // Set to "disabled"
+      switch (scheduleType) {
+        case 'Regular':
+          _regularTimes[index] = "disabled";
+          break;
+        case 'Friday':
+          _fridayTimes[index] = "disabled";
+          break;
+        case 'Exam/Special day':
+          _examTimes[index] = "disabled";
+          break;
+      }
+    } else {
+      // Restore to current time (or a default)
+      final now = TimeOfDay.now();
+      switch (scheduleType) {
+        case 'Regular':
+          _regularTimes[index] = now;
+          break;
+        case 'Friday':
+          _fridayTimes[index] = now;
+          break;
+        case 'Exam/Special day':
+          _examTimes[index] = now;
+          break;
+      }
+    }
+    notifyListeners();
+
+    // Update only the relevant time array in Firebase
+    String key;
+    List list;
+    switch (scheduleType) {
+      case 'Regular':
+        key = 'R_Time';
+        list = _regularTimes;
+        break;
+      case 'Friday':
+        key = 'F_Time';
+        list = _fridayTimes;
+        break;
+      case 'Exam/Special day':
+        key = 'E_Time';
+        list = _examTimes;
+        break;
+      default:
+        return;
+    }
+    String formatted = list.map((e) {
+      if (e == "disabled") return "disabled";
+      if (e is TimeOfDay) {
+        return '${e.hour.toString().padLeft(2, '0')}${e.minute.toString().padLeft(2, '0')}00';
+      }
+      return "disabled";
+    }).join(',');
+    await FirebaseDatabase.instance.ref().update({key: formatted});
+  }
+
+  Future fetchScheduleFromFirebase() async {
     try {
       final snapshot = await FirebaseDatabase.instance.ref().get();
       if (snapshot.exists) {
@@ -96,7 +183,7 @@ class ScheduleProvider with ChangeNotifier {
     }
     notifyListeners();
   }
-  
+
   void updateExamDate(int index, DateTime date) {
     if (index >= 0 && index < _examDates.length) {
       _examDates[index] = date;
@@ -149,10 +236,9 @@ class ScheduleProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> saveScheduleToFirebase() async {
+  Future saveScheduleToFirebase() async {
     _isUpdating = true;
     notifyListeners();
-    
     try {
       final updates = {
         'R_Time': _regularTimes.map(_formatDatabaseTime).join(','),
@@ -172,7 +258,6 @@ class ScheduleProvider with ChangeNotifier {
         'Status': {'value': 1},
         'count': 5,
       };
-      
       await FirebaseDatabase.instance.ref().update(updates);
     } catch (e) {
       debugPrint('Error saving schedule: $e');
@@ -189,7 +274,7 @@ class ScheduleProvider with ChangeNotifier {
     _updateTimeList(data['E_Time'], _examTimes);
   }
 
-  void _updateTimeList(String? timeString, List<TimeOfDay> timeList) {
+  void _updateTimeList(String? timeString, List timeList) {
     if (timeString != null) {
       final times = timeString.split(',');
       for (int i = 0; i < times.length && i < timeList.length; i++) {
@@ -221,23 +306,20 @@ class ScheduleProvider with ChangeNotifier {
     _audioList = data['Audio_List'] ?? 'Mor_Str.mp3,Mor_End.mp3,Sub_1.mp3,Sub_2.mp3,Interval.mp3';
     _audioListF = data['Audio_List_F'] ?? 'aa.mp3';
   }
-  
+
   void _updateExamDates(Map data) {
     if (data['SS_Date'] != null) {
       final datesString = data['SS_Date'] as String;
       final dates = _parseDatabaseDates(datesString);
-      
-      // Update exam dates list
       for (int i = 0; i < dates.length && i < _examDates.length; i++) {
         _examDates[i] = dates[i];
       }
     }
   }
-  
-  List<DateTime> _parseDatabaseDates(String datesString) {
-    final datesList = <DateTime>[];
+
+  List _parseDatabaseDates(String datesString) {
+    final datesList = [];
     final dates = datesString.split(',');
-    
     for (final dateStr in dates) {
       if (dateStr.length == 8) {
         try {
@@ -250,17 +332,17 @@ class ScheduleProvider with ChangeNotifier {
         }
       }
     }
-    
     return datesList;
   }
-  
+
   String _formatDatabaseDates() {
-    return _examDates.map((date) => 
+    return _examDates.map((date) =>
       '${date.day.toString().padLeft(2, '0')}${date.month.toString().padLeft(2, '0')}${date.year}'
     ).join(',');
   }
 
-  TimeOfDay _parseDatabaseTime(String timeStr) {
+  dynamic _parseDatabaseTime(String timeStr) {
+    if (timeStr == "disabled") return "disabled";
     try {
       final padded = timeStr.padLeft(6, '0');
       final hour = int.parse(padded.substring(0, 2));
@@ -271,7 +353,11 @@ class ScheduleProvider with ChangeNotifier {
     }
   }
 
-  String _formatDatabaseTime(TimeOfDay time) {
-    return '${time.hour.toString().padLeft(2, '0')}${time.minute.toString().padLeft(2, '0')}00';
+  String _formatDatabaseTime(dynamic time) {
+    if (time == "disabled") return "disabled";
+    if (time is TimeOfDay) {
+      return '${time.hour.toString().padLeft(2, '0')}${time.minute.toString().padLeft(2, '0')}00';
+    }
+    return "disabled";
   }
 }

@@ -3,10 +3,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:bell_system_test/effects/slide_page_route.dart';
 import 'package:bell_system_test/page/system_tabs.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
-
   @override
   State<LoginPage> createState() => _LoginPageState();
 }
@@ -16,8 +16,28 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController passwordController = TextEditingController();
   bool _isObscure = true;
   bool _isLoading = false;
-
+  bool _rememberMe = false;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkRememberMe();
+  }
+
+  void _checkRememberMe() async {
+    final prefs = await SharedPreferences.getInstance();
+    final rememberMe = prefs.getBool('remember_me') ?? false;
+    if (rememberMe) {
+      setState(() {
+        _rememberMe = true;
+        emailController.text = prefs.getString('email') ?? '';
+        passwordController.text = prefs.getString('password') ?? '';
+      });
+      // Optionally, auto-login:
+      // await signUserIn(context);
+    }
+  }
 
   @override
   void dispose() {
@@ -28,35 +48,44 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> signUserIn(BuildContext context) async {
     setState(() => _isLoading = true);
-
     try {
       await _auth.signInWithEmailAndPassword(
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
       );
-
-      // ignore: use_build_context_synchronously
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Login Successful"),
-          backgroundColor: Colors.green,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-
-      // ignore: use_build_context_synchronously
-      Navigator.of(context).pushReplacement(
-        SlidePageRoute(page: SystemTabs(), direction: SlideDirection.right),
-      );
+      // Save "remember me" preference
+      final prefs = await SharedPreferences.getInstance();
+      if (_rememberMe) {
+        await prefs.setBool('remember_me', true);
+        await prefs.setString('email', emailController.text.trim());
+        await prefs.setString('password', passwordController.text.trim());
+      } else {
+        await prefs.remove('remember_me');
+        await prefs.remove('email');
+        await prefs.remove('password');
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Login Successful"),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        Navigator.of(context).pushReplacement(
+          SlidePageRoute(page: SystemTabs(), direction: SlideDirection.right),
+        );
+      }
     } catch (e) {
-      // ignore: use_build_context_synchronously
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Invalid user ID or password"),
-          backgroundColor: Colors.redAccent,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Invalid user ID or password"),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -108,7 +137,6 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
                 const SizedBox(height: 40),
-
                 // Email field
                 Text(
                   "Email",
@@ -144,9 +172,7 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 24),
-
                 // Password field
                 Text(
                   "Password",
@@ -191,28 +217,27 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 12),
-
-                // Forgot password
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () {
-                      // Add forgot password functionality
-                    },
-                    style: TextButton.styleFrom(
-                      foregroundColor: Colors.blue.shade700,
+                
+                
+                // Remember Me checkbox
+                Row(
+                  children: [
+                    Checkbox(
+                      value: _rememberMe,
+                      onChanged: (value) {
+                        setState(() {
+                          _rememberMe = value ?? false;
+                        });
+                      },
                     ),
-                    child: Text(
-                      'Forgot Password?',
-                      style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
+                    Text(
+                      "Remember Me",
+                      style: GoogleFonts.poppins(fontSize: 14),
                     ),
-                  ),
+                  ],
                 ),
-
                 const SizedBox(height: 32),
-
                 // Sign in button
                 SizedBox(
                   width: double.infinity,
@@ -227,28 +252,25 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       elevation: 0,
                     ),
-                    child:
-                        _isLoading
-                            ? const SizedBox(
-                              height: 24,
-                              width: 24,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 3,
-                              ),
-                            )
-                            : Text(
-                              'Sign In',
-                              style: GoogleFonts.poppins(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
+                    child: _isLoading
+                        ? const SizedBox(
+                            height: 24,
+                            width: 24,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 3,
                             ),
+                          )
+                        : Text(
+                            'Sign In',
+                            style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                   ),
                 ),
-
                 const SizedBox(height: 40),
-
                 // Additional options (if needed)
                 Center(
                   child: Row(
@@ -286,4 +308,3 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
-
