@@ -3,8 +3,8 @@ import 'package:firebase_database/firebase_database.dart';
 
 class ScheduleProvider with ChangeNotifier {
   // Time lists: can be TimeOfDay or String "disabled"
-  final List _regularTimes = List.generate(15, (_) => TimeOfDay.now());
-  final List _fridayTimes = List.generate(11, (_) => TimeOfDay.now());
+  final List _regularTimes = List.generate(20, (_) => TimeOfDay.now());
+  final List _fridayTimes = List.generate(20, (_) => TimeOfDay.now());
   final List _examTimes = List.generate(8, (_) => TimeOfDay.now());
 
   // Exam dates
@@ -23,6 +23,8 @@ class ScheduleProvider with ChangeNotifier {
   // Audio files
   String _audioList = 'Mor_Str.mp3,Mor_End.mp3,Sub_1.mp3,Sub_2.mp3,Interval.mp3';
   String _audioListF = 'aa.mp3';
+  String _audioListICA = 'I_Close_audio1, I_Close_audio2';
+  String _audioListWA = 'Wastage_Audio1, Wastage_Audio2';
 
   // Getters
   List get regularTimes => _regularTimes;
@@ -38,6 +40,8 @@ class ScheduleProvider with ChangeNotifier {
   List get closingBellMode => _closingBellMode;
   String get audioList => _audioList;
   String get audioListF => _audioListF;
+  String get audioListICA => _audioListICA;
+  String get audioListWA => _audioListWA;
   bool get isUpdating => _isUpdating;
 
   /// Returns null if disabled, otherwise TimeOfDay
@@ -236,6 +240,16 @@ class ScheduleProvider with ChangeNotifier {
     notifyListeners();
   }
 
+   void updateAudioListICA(String value) {
+    _audioListF = value;
+    notifyListeners();
+  }
+
+   void updateAudioListWA(String value) {
+    _audioListF = value;
+    notifyListeners();
+  }
+
   Future saveScheduleToFirebase() async {
     _isUpdating = true;
     notifyListeners();
@@ -254,6 +268,8 @@ class ScheduleProvider with ChangeNotifier {
         'Clo_Bell_Mode': _closingBellMode.join(','),
         'Audio_List': _audioList,
         'Audio_List_F': _audioListF,
+        'Audio_List_ICA': _audioListICA,
+        'Audio_List_WA': _audioListWA,
         'Update': 1,
         'Status': {'value': 1},
         'count': 5,
@@ -305,6 +321,8 @@ class ScheduleProvider with ChangeNotifier {
   void _updateAudioFiles(Map data) {
     _audioList = data['Audio_List'] ?? 'Mor_Str.mp3,Mor_End.mp3,Sub_1.mp3,Sub_2.mp3,Interval.mp3';
     _audioListF = data['Audio_List_F'] ?? 'aa.mp3';
+    _audioListF = data['Int_Clo_Audio'] ?? 'I_Close_audio1, I_Close_audio2';
+    _audioListF = data['W_audio'] ?? 'Wastage_Audio1, Wastage_Audio2';
   }
 
   void _updateExamDates(Map data) {

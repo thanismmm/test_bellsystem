@@ -1,3 +1,4 @@
+import 'package:bell_system_test/new_test/digital_clock.dart';
 import 'package:flutter/material.dart';
 import 'package:bell_system_test/components/appbar.dart';
 import 'package:bell_system_test/page/new_attendence_page.dart';
@@ -28,6 +29,7 @@ class _SystemTabsPageState extends State<SystemTabs> with SingleTickerProviderSt
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      
       appBar: customAppBar(
   context,
   bottom: PreferredSize(
@@ -76,47 +78,51 @@ class BellSystemTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Bell System',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Bell System',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          SystemCard(
-            title: 'Automated Bell Schedule',
-            description: 'Configure and monitor the automatic bell system for class periods',
-            icon: Icons.schedule,
-            iconColor: Colors.blue,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ScheduleScreen(),
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 16),
-          SystemCard(
-            title: 'Manual Bell Control',
-            description: 'Manually trigger bells for special events and announcements',
-            icon: Icons.notifications_active,
-            iconColor: Colors.orange,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const ManualBellPage(),
-                ),
-              );
-            },
-          ),
-        ],
+            const SizedBox(height: 16),
+            SystemCard(
+              title: 'Automated Bell Schedule',
+              description: 'Configure and monitor the automatic bell system for class periods',
+              icon: Icons.schedule,
+              iconColor: Colors.blue,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ScheduleScreen(),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 16),
+            SystemCard(
+              title: 'Manual Bell Control',
+              description: 'Manually trigger bells for special events and announcements',
+              icon: Icons.notifications_active,
+              iconColor: Colors.orange,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ManualBellPage(),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 16),
+            const DigitalClock()
+          ],
+        ),
       ),
     );
   }

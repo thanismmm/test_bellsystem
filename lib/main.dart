@@ -1,5 +1,6 @@
 import 'package:bell_system_test/new_test/schedule_provider.dart';
 import 'package:bell_system_test/page/new_login.dart';
+import 'package:bell_system_test/page/schedule_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -38,7 +39,7 @@ class MyApp extends StatelessWidget {
         future: Future.delayed(const Duration(seconds: 2)), // Simulate loading
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.done) {
-              return LoginPage();
+              return ScheduleScreen();
           }
           return const Scaffold(
             body: Center(

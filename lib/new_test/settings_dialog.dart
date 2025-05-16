@@ -25,6 +25,8 @@ class _SettingsDialogState extends State<SettingsDialog> {
     provider.updateBellType(2);
   } else if (provider.bellType == 30) {
     provider.updateBellType(3);
+  }else if (provider.bellType == 40) {
+    provider.updateBellType(4);
   }
     shortController = TextEditingController(text: provider.shortBellDuration.toString());
     longController = TextEditingController(text: provider.longBellDuration.toString());
@@ -42,27 +44,30 @@ class _SettingsDialogState extends State<SettingsDialog> {
     final provider = Provider.of<ScheduleProvider>(context, listen: true);
     return AlertDialog(
       title: const Text('System Settings'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildBellTypeSelector(provider),
-            DurationTextField(
-              label: 'Short Bell Duration',
-              controller: shortController,
-              min: 0,
-              max: 10,
-            ),
-            DurationTextField(
-              label: 'Long Bell Duration',
-              controller: longController,
-              min: 0,
-              max: 20,
-            ),
-            _buildEmergencySwitch(provider),
-            _buildBellModeSettings(provider),
-            _buildAudioSettings(context, provider),
-          ],
+      insetPadding: EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+      content: SizedBox(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildBellTypeSelector(provider),
+              DurationTextField(
+                label: 'Short Bell Duration',
+                controller: shortController,
+                min: 0,
+                max: 10,
+              ),
+              DurationTextField(
+                label: 'Long Bell Duration',
+                controller: longController,
+                min: 0,
+                max: 20,
+              ),
+              // _buildEmergencySwitch(provider),
+              _buildBellModeSettings(provider),
+              _buildAudioSettings(context, provider),
+            ],
+          ),
         ),
       ),
       actions: [
@@ -78,6 +83,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
             provider.updateShortBellDuration(shortValue.clamp(0, 10));
             provider.updateLongBellDuration(longValue.clamp(0, 20));
             await provider.saveScheduleToFirebase();
+            // ignore: use_build_context_synchronously
             Navigator.pop(context);
           },
           child: const Text('Save'),
@@ -92,22 +98,23 @@ class _SettingsDialogState extends State<SettingsDialog> {
       trailing: DropdownButton(
         value: provider.bellType,
         items: const [
-          DropdownMenuItem(value: 1, child: Text("1")),
-          DropdownMenuItem(value: 2, child: Text('2')),
-          DropdownMenuItem(value: 3, child: Text('3')),
+          DropdownMenuItem(value: 1, child: Text("Ring Bell")),
+          DropdownMenuItem(value: 2, child: Text('Ring and Audio')),
+          DropdownMenuItem(value: 3, child: Text('Soft Ring and Audio')),
+          DropdownMenuItem(value: 4, child: Text('Audio only')),
         ],
         onChanged: (value) => provider.updateBellType(value!),
       ),
     );
   }
 
-  Widget _buildEmergencySwitch(ScheduleProvider provider) {
-    return SwitchListTile(
-      title: const Text('Emergency Ring'),
-      value: provider.emergencyRing,
-      onChanged: provider.toggleEmergencyRing,
-    );
-  }
+  // Widget _buildEmergencySwitch(ScheduleProvider provider) {
+  //   return SwitchListTile(
+  //     title: const Text('Emergency Ring'),
+  //     value: provider.emergencyRing,
+  //     onChanged: provider.toggleEmergencyRing,
+  //   );
+  // }
 
   Widget _buildBellModeSettings(ScheduleProvider provider) {
     return Column(
@@ -173,9 +180,9 @@ class _SettingsDialogState extends State<SettingsDialog> {
             runSpacing: 8.0,
             children: [
               SizedBox(width: 120, child: _buildLabeledModeDropdown('Ring Type', mode, 0, 5, onUpdate)),
-              SizedBox(width: 72, child: _buildLabeledModeDropdown('Regular', mode, 1, 15, onUpdate)),
-              SizedBox(width: 75, child: _buildLabeledModeDropdown('Friday', mode, 2, 15, onUpdate)),
-              SizedBox(width: 75, child: _buildLabeledModeDropdown('Special', mode, 3, 15, onUpdate)),
+              SizedBox(width: 72, child: _buildLabeledModeDropdown('Regular (ind)', mode, 1, 15, onUpdate)),
+              SizedBox(width: 75, child: _buildLabeledModeDropdown('Friday(ind)', mode, 2, 15, onUpdate)),
+              SizedBox(width: 75, child: _buildLabeledModeDropdown('Special(ind)', mode, 3, 15, onUpdate)),
             ],
           ),
         ),
@@ -195,65 +202,86 @@ class _SettingsDialogState extends State<SettingsDialog> {
   }
 
 
-
-Widget _buildLabeledModeDropdown(
+  Widget _buildLabeledModeDropdown(
   String label,
   List mode,
   int index,
   int itemCount,
   Function(int, int) onUpdate,
 ) {
-  // Ensure the current value is within the valid range
-  if (mode[index] >= itemCount) {
-    // If the current value is out of range, update it to a valid value
-    // This will happen immediately when the widget builds
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      onUpdate(index, 0); // Reset to first option
-    });
-  }
-
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(
-        label,
-        style: TextStyle(
-          fontSize: 12,
-          color: Colors.blue[700],
-          fontWeight: FontWeight.w500,
+  // If label is "Ring Type", show the dropdown as before
+  if (label == 'Ring Type') {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.blue[700],
+            fontWeight: FontWeight.w500,
+          ),
         ),
-      ),
-      Container(
-        width: label == 'Ring Type' ? 120 : 72,
-        margin: const EdgeInsets.only(right: 8.0, top: 4.0, bottom: 8.0),
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.blue[200]!),
-          borderRadius: BorderRadius.circular(8.0),
-        ),
-        child: DropdownButtonHideUnderline(
-          child: ButtonTheme(
-            alignedDropdown: true,
-            child: DropdownButton(
-              isExpanded: true,
-              // Use a valid value for the dropdown
-              value: mode[index] < itemCount ? mode[index] : 0,
-              items: List.generate(
-                itemCount,
-                (i) => DropdownMenuItem(
-                  value: i,
-                  child: Text(
-                    label == 'Ring Type' ? _getBellModeLabel(i) : i.toString(),
-                    style: const TextStyle(fontSize: 14),
+        Container(
+          width: 120,
+          margin: const EdgeInsets.only(right: 8.0, top: 4.0, bottom: 8.0),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.blue[200]!),
+            borderRadius: BorderRadius.circular(8.0),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: ButtonTheme(
+              alignedDropdown: true,
+              child: DropdownButton(
+                isExpanded: true,
+                value: mode[index] < itemCount ? mode[index] : 0,
+                items: List.generate(
+                  itemCount,
+                  (i) => DropdownMenuItem(
+                    value: i,
+                    child: Text(
+                      _getBellModeLabel(i),
+                      style: const TextStyle(fontSize: 14),
+                    ),
                   ),
                 ),
+                onChanged: (value) => onUpdate(index, value ?? mode[index]),
               ),
-              onChanged: (value) => onUpdate(index, value ?? mode[index]),
             ),
           ),
         ),
-      ),
-    ],
-  );
+      ],
+    );
+  } else {
+    // For Regular, Friday, Special: show only the current value as text
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.blue[700],
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        Container(
+          width: 50,
+          margin: const EdgeInsets.only(right: 8.0, top: 8.0, bottom: 8.0),
+          padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 8.0),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.blue[200]!),
+            borderRadius: BorderRadius.circular(8.0),
+          ),
+          child: Text(
+            mode[index].toString(),
+            style: const TextStyle(fontSize: 14),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 
@@ -280,6 +308,28 @@ Widget _buildLabeledModeDropdown(
             'Friday Audio Files',
             provider.audioListF,
             provider.updateAudioListF,
+          ),
+        ),
+
+        ListTile(
+          title: const Text('Interval Close Audio Files'),
+          subtitle: Text(provider.audioListICA),
+          onTap: () => _showEditDialog(
+            context,
+            'Interval Interval Close Files',
+            provider.audioListICA,
+            provider.updateAudioListICA,
+          ),
+        ),
+
+        ListTile(
+          title: const Text('Wastage Audio Files'),
+          subtitle: Text(provider.audioListWA),
+          onTap: () => _showEditDialog(
+            context,
+            'Wastage Audio Files',
+            provider.audioListWA,
+            provider.updateAudioListWA,
           ),
         ),
       ],
