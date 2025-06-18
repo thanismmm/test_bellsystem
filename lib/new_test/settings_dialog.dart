@@ -323,7 +323,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
         ),
 
         ListTile(
-          title: const Text('Wastage Audio Files'),
+          title: const Text('Special Audio Files'),
           subtitle: Text(provider.audioListWA),
           onTap: () => _showEditDialog(
             context,

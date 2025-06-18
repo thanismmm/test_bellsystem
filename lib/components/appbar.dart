@@ -57,7 +57,7 @@ PreferredSizeWidget customAppBar(BuildContext context, {PreferredSizeWidget? bot
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  "School Bell System",
+                  "Smart Bell System",
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 18,

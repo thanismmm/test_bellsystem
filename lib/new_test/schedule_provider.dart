@@ -44,6 +44,25 @@ class ScheduleProvider with ChangeNotifier {
   String get audioListWA => _audioListWA;
   bool get isUpdating => _isUpdating;
 
+  // Constructor: Start listening to real-time updates!
+  ScheduleProvider() {
+    listenToScheduleUpdates();
+  }
+
+  /// Real-time Firebase listener
+  void listenToScheduleUpdates() {
+    FirebaseDatabase.instance.ref().onValue.listen((event) {
+      if (event.snapshot.exists) {
+        final data = event.snapshot.value as Map;
+        _updateTimes(data);
+        _updateBellSettings(data);
+        _updateAudioFiles(data);
+        _updateExamDates(data);
+        notifyListeners();
+      }
+    });
+  }
+
   /// Returns null if disabled, otherwise TimeOfDay
   TimeOfDay? getCurrentTime(String scheduleType, int index) {
     dynamic value;

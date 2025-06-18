@@ -34,7 +34,7 @@ class _DigitalClockState extends State<DigitalClock> {
   Widget build(BuildContext context) {
 
     final deviceWidth = MediaQuery.of(context).size.width;
-    final devicehight = MediaQuery.of(context).size.height;
+    // final devicehight = MediaQuery.of(context).size.height;
 
     String formattedTime = "${_now.hour.toString().padLeft(2, '0')}:"
         "${_now.minute.toString().padLeft(2, '0')}:"
